@@ -1,0 +1,673 @@
+{
+  "info": {
+    "name": "BabyCare API",
+    "_postman_id": "babycare-api-collection",
+    "description": "BabyCare API — connects parents with trusted babysitters.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "parent_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "babysitter_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "babysitter_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "conversation_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Parent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Jane Parent\",\n  \"email\": \"jane.parent@example.com\",\n  \"phone\": \"+1234567890\",\n  \"location\": \"New York, NY\",\n  \"occupation\": \"Engineer\",\n  \"preferred_hours\": \"Evenings and weekends\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/parent",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", "parent"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Babysitter",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "full_name", "value": "Alice Sitter", "type": "text" },
+                { "key": "email", "value": "alice.sitter@example.com", "type": "text" },
+                { "key": "phone", "value": "+1987654321", "type": "text" },
+                { "key": "location", "value": "Brooklyn, NY", "type": "text" },
+                { "key": "languages", "value": "[\"English\",\"Spanish\"]", "type": "text" },
+                { "key": "password", "value": "secret123", "type": "text" },
+                { "key": "profile_picture", "type": "file", "src": "" },
+                { "key": "id_document", "type": "file", "src": "" },
+                { "key": "certificate", "type": "file", "src": "" },
+                { "key": "background_check", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register/babysitter",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register", "babysitter"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Parent)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('parent_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane.parent@example.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Babysitter)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('babysitter_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice.sitter@example.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('admin_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@babycare.app\",\n  \"password\": \"changeme\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{babysitter_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Babysitter",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/babysitters/:id/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "babysitters", ":id", "approve"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{babysitter_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/:id/suspend",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users", ":id", "suspend"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{babysitter_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{babysitter_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"New Admin\",\n  \"email\": \"newadmin@babycare.app\",\n  \"password\": \"adminpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "create"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/activity",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "activity"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Babysitters",
+      "item": [
+        {
+          "name": "List Babysitters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/babysitters",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "babysitters"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Babysitter Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.user_id) {",
+                  "  pm.collectionVariables.set('babysitter_id', json.user_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/babysitters/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "babysitters", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{babysitter_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Babysitter Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{babysitter_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "location", "value": "Manhattan, NY", "type": "text" },
+                { "key": "languages", "value": "English,Spanish,French", "type": "text" },
+                { "key": "days_per_week", "value": "5", "type": "text" },
+                { "key": "hours_per_day", "value": "8", "type": "text" },
+                { "key": "rate_type", "value": "hourly", "type": "text" },
+                { "key": "rate_amount", "value": "25.00", "type": "text" },
+                { "key": "payment_method", "value": "cash", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/babysitters/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "babysitters", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile Views",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{babysitter_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/babysitters/profile/views",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "babysitters", "profile", "views"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Parents",
+      "item": [
+        {
+          "name": "Get Parent Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/parents/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "parents", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Parent Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"Queens, NY\",\n  \"occupation\": \"Teacher\",\n  \"preferred_hours\": \"Weekday mornings\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/parents/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "parents", "profile"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messaging",
+      "item": [
+        {
+          "name": "Start Conversation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('conversation_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"babysitter_id\": \"{{babysitter_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hi! Are you available this Saturday evening?\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/:conversation_id/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", ":conversation_id", "messages"],
+              "variable": [
+                {
+                  "key": "conversation_id",
+                  "value": "{{conversation_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{parent_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/conversations/:conversation_id/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "conversations", ":conversation_id", "messages"],
+              "variable": [
+                {
+                  "key": "conversation_id",
+                  "value": "{{conversation_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
