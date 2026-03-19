@@ -9,6 +9,7 @@ import (
 	services_auth "babycare-api/internal/services/auth"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // RequireAuth validates the Bearer token in the Authorization header via Clerk.
@@ -46,10 +47,17 @@ func RequireRole(database *sql.DB, roles ...string) gin.HandlerFunc {
 		}
 
 		queries := db.New(database)
+		subject := clerkUserID.(string)
 		user, err := queries.GetUserByClerkID(c.Request.Context(), sql.NullString{
-			String: clerkUserID.(string),
+			String: subject,
 			Valid:  true,
 		})
+		if err == sql.ErrNoRows {
+			// Subject may be a plain user UUID (e.g. admin tokens).
+			if uid, parseErr := uuid.Parse(subject); parseErr == nil {
+				user, err = queries.GetUserByID(c.Request.Context(), uid)
+			}
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorised"})
 			return

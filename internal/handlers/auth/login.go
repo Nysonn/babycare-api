@@ -62,20 +62,36 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Sync user into Stream Chat (non-fatal if it fails).
-	if err := h.streamService.UpsertUser(user.ClerkUserID.String, user.FullName); err != nil {
-		log.Printf("login: stream upsert user: %v", err)
+	expiresAt := time.Now().Add(90 * 24 * time.Hour)
+
+	var tokenSubject string
+	if user.Role == db.UserRoleAdmin {
+		// Admin is seeded directly into the DB with no Clerk account.
+		// Use the user's own UUID as the JWT subject.
+		tokenSubject = user.ID.String()
+	} else {
+		// Guard against non-admin users with no Clerk ID (misconfigured accounts).
+		if !user.ClerkUserID.Valid || user.ClerkUserID.String == "" {
+			log.Printf("login: user %s has empty clerk_user_id", user.ID)
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "account configuration error, please contact support"})
+			return
+		}
+
+		// Sync user into Stream Chat (non-fatal if it fails).
+		if err := h.streamService.UpsertUser(user.ID.String(), user.FullName); err != nil {
+			log.Printf("login: stream upsert user: %v", err)
+		}
+
+		tokenSubject = user.ClerkUserID.String
 	}
 
-	// Create a Clerk session token.
-	token, err := h.clerkService.CreateSession(user.ClerkUserID.String)
+	// Generate a signed JWT session token.
+	token, err := h.clerkService.GenerateToken(tokenSubject, expiresAt)
 	if err != nil {
-		log.Printf("login: create clerk session: %v", err)
+		log.Printf("login: generate token: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "failed to create session"})
 		return
 	}
-
-	expiresAt := time.Now().Add(90 * 24 * time.Hour)
 
 	c.JSON(http.StatusOK, models.LoginResponse{
 		Token:     token,

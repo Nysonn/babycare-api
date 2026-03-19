@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const clerkBaseURL = "https://api.clerk.com/v1"
@@ -100,85 +103,41 @@ func (s *ClerkService) DeleteUser(clerkUserID string) error {
 	return nil
 }
 
-// VerifyToken validates a session token with Clerk and returns the Clerk user ID.
-func (s *ClerkService) VerifyToken(sessionToken string) (string, error) {
-	req, err := http.NewRequest(http.MethodGet, clerkBaseURL+"/clients/verify", nil)
-	if err != nil {
-		return "", fmt.Errorf("clerk: build verify request: %w", err)
+// GenerateToken creates a signed JWT for the given Clerk user ID, expiring at expiry.
+func (s *ClerkService) GenerateToken(clerkUserID string, expiry time.Time) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": clerkUserID,
+		"exp": expiry.Unix(),
 	}
-	req.Header.Set("Authorization", "Bearer "+s.secretKey)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(s.secretKey))
+	if err != nil {
+		return "", fmt.Errorf("clerk: sign token: %w", err)
+	}
+	return signed, nil
+}
 
-	q := req.URL.Query()
-	q.Set("token", sessionToken)
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := s.httpClient.Do(req)
+// VerifyToken parses a signed JWT and returns the Clerk user ID from the "sub" claim.
+func (s *ClerkService) VerifyToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("clerk: unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(s.secretKey), nil
+	})
 	if err != nil {
 		return "", fmt.Errorf("clerk: verify token: %w", err)
 	}
-	defer resp.Body.Close()
 
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("clerk: verify token read body: %w", err)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return "", fmt.Errorf("clerk: verify token: invalid token")
 	}
 
-	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("clerk: verify token failed with status %d", resp.StatusCode)
+	sub, err := claims.GetSubject()
+	if err != nil || sub == "" {
+		return "", fmt.Errorf("clerk: verify token: missing sub claim")
 	}
 
-	// The client verify response contains a list of sessions, each with a user_id.
-	var result struct {
-		Sessions []struct {
-			UserID string `json:"user_id"`
-		} `json:"sessions"`
-	}
-
-	if err := json.Unmarshal(respBytes, &result); err != nil {
-		return "", fmt.Errorf("clerk: verify token unmarshal: %w", err)
-	}
-
-	if len(result.Sessions) == 0 || result.Sessions[0].UserID == "" {
-		return "", fmt.Errorf("clerk: verify token: no active session found")
-	}
-
-	return result.Sessions[0].UserID, nil
-}
-
-// CreateSession creates a Clerk session for the given user and returns a session token.
-func (s *ClerkService) CreateSession(clerkUserID string) (string, error) {
-	payload := map[string]any{
-		"user_id": clerkUserID,
-	}
-
-	var result struct {
-		ID             string `json:"id"`
-		LastActiveToken struct {
-			JWT string `json:"jwt"`
-		} `json:"last_active_token"`
-	}
-
-	if _, err := s.clerkDo(http.MethodPost, "/sessions", payload, &result); err != nil {
-		return "", fmt.Errorf("clerk: create session: %w", err)
-	}
-
-	// Prefer the JWT token; fall back to the session ID.
-	if result.LastActiveToken.JWT != "" {
-		return result.LastActiveToken.JWT, nil
-	}
-	if result.ID != "" {
-		return result.ID, nil
-	}
-
-	return "", fmt.Errorf("clerk: create session: no token in response")
-}
-
-// RevokeSession revokes a Clerk session by token/session ID.
-func (s *ClerkService) RevokeSession(sessionToken string) error {
-	path := fmt.Sprintf("/sessions/%s/revoke", sessionToken)
-	if _, err := s.clerkDo(http.MethodDelete, path, nil, nil); err != nil {
-		// Log-worthy but non-fatal — caller decides whether to surface this.
-		return fmt.Errorf("clerk: revoke session: %w", err)
-	}
-	return nil
+	return sub, nil
 }

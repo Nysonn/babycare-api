@@ -1,6 +1,7 @@
 package messaging
 
 import (
+	"crypto/md5"
 	"database/sql"
 	"fmt"
 	"log"
@@ -12,6 +13,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+// buildChannelID returns a deterministic channel ID under 64 characters.
+// The two IDs are concatenated in a fixed order so the same pair always
+// produces the same hash regardless of who initiated the conversation.
+func buildChannelID(parentID, babysitterID string) string {
+	combined := parentID + babysitterID
+	hash := md5.Sum([]byte(combined))
+	return fmt.Sprintf("bc-%x", hash)
+}
 
 type startConversationRequest struct {
 	BabysitterID string `json:"babysitter_id" binding:"required"`
@@ -86,8 +96,16 @@ func (h *MessagingHandler) StartConversation(c *gin.Context) {
 		return
 	}
 
-	// Build a deterministic Stream channel ID.
-	channelID := fmt.Sprintf("conversation-%s-%s", currentUser.ID.String(), babysitterID.String())
+	// Ensure both users exist in Stream Chat before creating the channel.
+	if err := h.streamService.UpsertUser(currentUser.ID.String(), currentUser.FullName); err != nil {
+		log.Printf("start_conversation: upsert parent to stream: %v", err)
+	}
+	if err := h.streamService.UpsertUser(babysitterID.String(), babysitter.FullName); err != nil {
+		log.Printf("start_conversation: upsert babysitter to stream: %v", err)
+	}
+
+	// Build a deterministic Stream channel ID under 64 characters.
+	channelID := buildChannelID(currentUser.ID.String(), babysitterID.String())
 
 	// Create the Stream Chat channel.
 	if _, err := h.streamService.CreateChannel(channelID, currentUser.ID.String(), babysitterID.String()); err != nil {
