@@ -40,7 +40,10 @@ func Setup(
 
 	// CORS — allow all origins for Flutter web and mobile clients.
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowOrigins = []string{
+		"http://localhost:5173",
+		"http://localhost:5174",
+	}
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept"}
 	r.Use(cors.New(corsConfig))
