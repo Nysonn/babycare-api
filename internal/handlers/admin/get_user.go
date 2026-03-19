@@ -25,6 +25,9 @@ type getUserDetailResponse struct {
 	RateAmount        *string  `json:"rate_amount,omitempty"`
 	PaymentMethod     *string  `json:"payment_method,omitempty"`
 	IsApproved        *bool    `json:"is_approved,omitempty"`
+	NationalIDUrl     *string  `json:"national_id_url,omitempty"`
+	LciLetterUrl      *string  `json:"lci_letter_url,omitempty"`
+	CvUrl             *string  `json:"cv_url,omitempty"`
 	// Parent-only fields
 	Occupation     *string `json:"occupation,omitempty"`
 	PreferredHours *string `json:"preferred_hours,omitempty"`
@@ -97,6 +100,9 @@ func (h *AdminHandler) GetUser(c *gin.Context) {
 			resp.RateAmount = nullStringPtr(profile.RateAmount)
 			resp.PaymentMethod = nullStringPtr(profile.PaymentMethod)
 			resp.IsApproved = &profile.IsApproved
+			resp.NationalIDUrl = nullStringPtr(profile.NationalIDUrl)
+			resp.LciLetterUrl = nullStringPtr(profile.LciLetterUrl)
+			resp.CvUrl = nullStringPtr(profile.CvUrl)
 		}
 
 	case db.UserRoleParent:

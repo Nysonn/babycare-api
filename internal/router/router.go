@@ -43,6 +43,7 @@ func Setup(
 	corsConfig.AllowOrigins = []string{
 		"http://localhost:5173",
 		"http://localhost:5174",
+		"https://babycare-f6f8e.web.app",
 	}
 	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept"}
