@@ -53,7 +53,7 @@ func Load() *Config {
 		panic(fmt.Errorf("config: DATABASE_URL is required but not set"))
 	}
 	if cfg.Port == "" {
-		panic(fmt.Errorf("config: PORT is required but not set"))
+		cfg.Port = "8080"
 	}
 
 	return cfg

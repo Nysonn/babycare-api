@@ -17,6 +17,7 @@ import (
 	services_messaging "babycare-api/internal/services/messaging"
 	"babycare-api/internal/services/storage"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,6 +37,13 @@ func Setup(
 	}
 
 	r := gin.New()
+
+	// CORS — allow all origins for Flutter web and mobile clients.
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept"}
+	r.Use(cors.New(corsConfig))
 
 	// Global middleware.
 	r.Use(gin.Recovery()) // Recover from panics and return 500

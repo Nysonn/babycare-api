@@ -124,6 +124,22 @@ A Postman collection covering all endpoints is available in [`babycare.json`](ba
 
 ---
 
+## Deployment (Render)
+
+- Create a new Web Service on Render
+- Set the environment to Docker
+- Set the Dockerfile path to: `Dockerfile`
+- Set the Docker target to: `production`
+- Add all environment variables from `.env.example` in the Render dashboard under **Environment Variables**. Do not use the `.env` file on Render.
+- Before the first deploy, run migrations manually from your local machine against the production Neon database:
+  ```bash
+  make migrate-up
+  ```
+- The Neon database is external so migrations run the same way locally and in production.
+- Add a Render Redis instance and copy the Redis URL into the `REDIS_URL` environment variable in the Render dashboard.
+
+---
+
 ## Third Party Services
 
 | Service       | Purpose                                       | Env Keys                                                  |
