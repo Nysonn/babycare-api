@@ -106,6 +106,8 @@ func Setup(
 	{
 		babysitterSelf.PUT("/profile", babysitterHandler.UpdateProfile)
 		babysitterSelf.GET("/profile/views", babysitterHandler.GetProfileViews)
+		babysitterSelf.GET("/profile/weekly-views", babysitterHandler.GetWeeklyViews)
+		babysitterSelf.PUT("/work-status", babysitterHandler.SetWorkStatus)
 	}
 
 	// Parents and babysitters can view a babysitter's profile.
@@ -119,6 +121,9 @@ func Setup(
 	{
 		parentRoutes.GET("/profile", parentHandler.GetProfile)
 		parentRoutes.PUT("/profile", parentHandler.UpdateProfile)
+		parentRoutes.POST("/saved-babysitters", parentHandler.SaveBabysitter)
+		parentRoutes.DELETE("/saved-babysitters/:babysitter_id", parentHandler.UnsaveBabysitter)
+		parentRoutes.GET("/saved-babysitters", parentHandler.ListSavedBabysitters)
 	}
 
 	// --- Messaging routes (parent or babysitter required) ---

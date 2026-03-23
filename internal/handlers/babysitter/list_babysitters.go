@@ -14,7 +14,7 @@ import (
 const cacheKeyBabysitterList = "babysitters:list"
 const cacheTTLList = 5 * time.Minute
 
-// ListBabysitters returns all approved, active babysitters.
+// ListBabysitters returns all approved, active, and available babysitters.
 // Results are cached in Redis for 5 minutes.
 func (h *BabysitterHandler) ListBabysitters(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -52,6 +52,10 @@ func (h *BabysitterHandler) ListBabysitters(c *gin.Context) {
 			RateAmount:        parseFloat(r.RateAmount.String),
 			PaymentMethod:     r.PaymentMethod.String,
 			IsApproved:        r.IsApproved,
+			Gender:            r.Gender.String,
+			Availability:      r.Availability,
+			Currency:          r.Currency,
+			IsAvailable:       r.IsAvailable,
 		})
 	}
 

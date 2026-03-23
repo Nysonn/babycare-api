@@ -70,10 +70,11 @@ func (h *AuthHandler) RegisterParent(c *gin.Context) {
 
 	// Create the parent profile.
 	_, err = queries.CreateParentProfile(ctx, db.CreateParentProfileParams{
-		UserID:         user.ID,
-		Location:       sql.NullString{String: req.Location, Valid: req.Location != ""},
-		Occupation:     sql.NullString{String: req.Occupation, Valid: req.Occupation != ""},
-		PreferredHours: sql.NullString{String: req.PreferredHours, Valid: req.PreferredHours != ""},
+		UserID:          user.ID,
+		Location:        sql.NullString{String: req.Location, Valid: req.Location != ""},
+		Occupation:      sql.NullString{String: req.Occupation, Valid: req.Occupation != ""},
+		PreferredHours:  sql.NullString{String: req.PreferredHours, Valid: req.PreferredHours != ""},
+		PrimaryLocation: sql.NullString{String: req.PrimaryLocation, Valid: req.PrimaryLocation != ""},
 	})
 	if err != nil {
 		log.Printf("register_parent: create parent profile: %v", err)

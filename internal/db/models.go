@@ -160,6 +160,10 @@ type BabysitterProfile struct {
 	IsApproved        bool
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
+	IsAvailable       bool
 }
 
 type Conversation struct {
@@ -182,13 +186,14 @@ type Message struct {
 }
 
 type ParentProfile struct {
-	ID             uuid.UUID
-	UserID         uuid.UUID
-	Location       sql.NullString
-	Occupation     sql.NullString
-	PreferredHours sql.NullString
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              uuid.UUID
+	UserID          uuid.UUID
+	Location        sql.NullString
+	Occupation      sql.NullString
+	PreferredHours  sql.NullString
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	PrimaryLocation sql.NullString
 }
 
 type ProfileView struct {
@@ -196,6 +201,13 @@ type ProfileView struct {
 	BabysitterID uuid.UUID
 	ParentID     uuid.UUID
 	ViewedAt     time.Time
+}
+
+type SavedBabysitter struct {
+	ID           uuid.UUID
+	ParentID     uuid.UUID
+	BabysitterID uuid.UUID
+	SavedAt      time.Time
 }
 
 type User struct {

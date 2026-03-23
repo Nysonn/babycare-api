@@ -54,6 +54,17 @@ func (h *BabysitterHandler) UpdateProfile(c *gin.Context) {
 	location := mergeString(c.Request.FormValue("location"), currentProfile.Location.String)
 	paymentMethod := mergeString(c.Request.FormValue("payment_method"), currentProfile.PaymentMethod.String)
 	rateAmountStr := mergeString(c.Request.FormValue("rate_amount"), currentProfile.RateAmount.String)
+	currency := mergeString(c.Request.FormValue("currency"), currentProfile.Currency)
+
+	// Gender
+	gender := currentProfile.Gender
+	if raw := strings.ToLower(strings.TrimSpace(c.Request.FormValue("gender"))); raw != "" {
+		if raw != "male" && raw != "female" {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "gender must be 'male' or 'female'"})
+			return
+		}
+		gender = sql.NullString{String: raw, Valid: true}
+	}
 
 	// Languages
 	languages := currentProfile.Languages
@@ -62,6 +73,17 @@ func (h *BabysitterHandler) UpdateProfile(c *gin.Context) {
 		for _, lang := range strings.Split(raw, ",") {
 			if trimmed := strings.TrimSpace(lang); trimmed != "" {
 				languages = append(languages, trimmed)
+			}
+		}
+	}
+
+	// Availability
+	availability := currentProfile.Availability
+	if raw := c.Request.FormValue("availability"); raw != "" {
+		availability = []string{}
+		for _, day := range strings.Split(raw, ",") {
+			if trimmed := strings.TrimSpace(day); trimmed != "" {
+				availability = append(availability, trimmed)
 			}
 		}
 	}
@@ -108,6 +130,9 @@ func (h *BabysitterHandler) UpdateProfile(c *gin.Context) {
 		RateAmount:        sql.NullString{String: rateAmountStr, Valid: rateAmountStr != ""},
 		PaymentMethod:     sql.NullString{String: paymentMethod, Valid: paymentMethod != ""},
 		ProfilePictureUrl: profilePictureURL,
+		Gender:            gender,
+		Availability:      availability,
+		Currency:          currency,
 	})
 	if err != nil {
 		log.Printf("babysitter update_profile: db update: %v", err)
@@ -137,6 +162,10 @@ func (h *BabysitterHandler) UpdateProfile(c *gin.Context) {
 		RateAmount:        parseFloat(updated.RateAmount.String),
 		PaymentMethod:     updated.PaymentMethod.String,
 		IsApproved:        updated.IsApproved,
+		Gender:            updated.Gender.String,
+		Availability:      updated.Availability,
+		Currency:          updated.Currency,
+		IsAvailable:       updated.IsAvailable,
 	})
 }
 

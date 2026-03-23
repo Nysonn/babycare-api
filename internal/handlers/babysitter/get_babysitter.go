@@ -84,6 +84,10 @@ func (h *BabysitterHandler) GetBabysitter(c *gin.Context) {
 		RateAmount:        parseFloat(profile.RateAmount.String),
 		PaymentMethod:     profile.PaymentMethod.String,
 		IsApproved:        profile.IsApproved,
+		Gender:            profile.Gender.String,
+		Availability:      profile.Availability,
+		Currency:          profile.Currency,
+		IsAvailable:       profile.IsAvailable,
 	}
 
 	// Populate cache (failure is non-fatal).

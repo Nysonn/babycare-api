@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -17,12 +18,35 @@ const approveBabysitter = `-- name: ApproveBabysitter :one
 UPDATE babysitter_profiles
 SET is_approved = TRUE, updated_at = NOW()
 WHERE user_id = $1
-RETURNING id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, created_at, updated_at
+RETURNING id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, gender, availability, currency, is_available, created_at, updated_at
 `
 
-func (q *Queries) ApproveBabysitter(ctx context.Context, userID uuid.UUID) (BabysitterProfile, error) {
+type ApproveBabysitterRow struct {
+	ID                uuid.UUID
+	UserID            uuid.UUID
+	Location          sql.NullString
+	NationalIDUrl     sql.NullString
+	LciLetterUrl      sql.NullString
+	CvUrl             sql.NullString
+	ProfilePictureUrl sql.NullString
+	Languages         []string
+	DaysPerWeek       sql.NullInt32
+	HoursPerDay       sql.NullInt32
+	RateType          NullRateType
+	RateAmount        sql.NullString
+	PaymentMethod     sql.NullString
+	IsApproved        bool
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
+	IsAvailable       bool
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+func (q *Queries) ApproveBabysitter(ctx context.Context, userID uuid.UUID) (ApproveBabysitterRow, error) {
 	row := q.db.QueryRowContext(ctx, approveBabysitter, userID)
-	var i BabysitterProfile
+	var i ApproveBabysitterRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -38,6 +62,10 @@ func (q *Queries) ApproveBabysitter(ctx context.Context, userID uuid.UUID) (Baby
 		&i.RateAmount,
 		&i.PaymentMethod,
 		&i.IsApproved,
+		&i.Gender,
+		pq.Array(&i.Availability),
+		&i.Currency,
+		&i.IsAvailable,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -45,9 +73,13 @@ func (q *Queries) ApproveBabysitter(ctx context.Context, userID uuid.UUID) (Baby
 }
 
 const createBabysitterProfile = `-- name: CreateBabysitterProfile :one
-INSERT INTO babysitter_profiles (user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-RETURNING id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, created_at, updated_at
+INSERT INTO babysitter_profiles (
+    user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url,
+    languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method,
+    gender, availability, currency
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+RETURNING id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, gender, availability, currency, is_available, created_at, updated_at
 `
 
 type CreateBabysitterProfileParams struct {
@@ -63,9 +95,35 @@ type CreateBabysitterProfileParams struct {
 	RateType          NullRateType
 	RateAmount        sql.NullString
 	PaymentMethod     sql.NullString
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
 }
 
-func (q *Queries) CreateBabysitterProfile(ctx context.Context, arg CreateBabysitterProfileParams) (BabysitterProfile, error) {
+type CreateBabysitterProfileRow struct {
+	ID                uuid.UUID
+	UserID            uuid.UUID
+	Location          sql.NullString
+	NationalIDUrl     sql.NullString
+	LciLetterUrl      sql.NullString
+	CvUrl             sql.NullString
+	ProfilePictureUrl sql.NullString
+	Languages         []string
+	DaysPerWeek       sql.NullInt32
+	HoursPerDay       sql.NullInt32
+	RateType          NullRateType
+	RateAmount        sql.NullString
+	PaymentMethod     sql.NullString
+	IsApproved        bool
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
+	IsAvailable       bool
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+func (q *Queries) CreateBabysitterProfile(ctx context.Context, arg CreateBabysitterProfileParams) (CreateBabysitterProfileRow, error) {
 	row := q.db.QueryRowContext(ctx, createBabysitterProfile,
 		arg.UserID,
 		arg.Location,
@@ -79,8 +137,11 @@ func (q *Queries) CreateBabysitterProfile(ctx context.Context, arg CreateBabysit
 		arg.RateType,
 		arg.RateAmount,
 		arg.PaymentMethod,
+		arg.Gender,
+		pq.Array(arg.Availability),
+		arg.Currency,
 	)
-	var i BabysitterProfile
+	var i CreateBabysitterProfileRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -96,6 +157,10 @@ func (q *Queries) CreateBabysitterProfile(ctx context.Context, arg CreateBabysit
 		&i.RateAmount,
 		&i.PaymentMethod,
 		&i.IsApproved,
+		&i.Gender,
+		pq.Array(&i.Availability),
+		&i.Currency,
+		&i.IsAvailable,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -103,13 +168,37 @@ func (q *Queries) CreateBabysitterProfile(ctx context.Context, arg CreateBabysit
 }
 
 const getBabysitterProfileByUserID = `-- name: GetBabysitterProfileByUserID :one
-SELECT id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, created_at, updated_at FROM babysitter_profiles
+SELECT id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, gender, availability, currency, is_available, created_at, updated_at
+FROM babysitter_profiles
 WHERE user_id = $1
 `
 
-func (q *Queries) GetBabysitterProfileByUserID(ctx context.Context, userID uuid.UUID) (BabysitterProfile, error) {
+type GetBabysitterProfileByUserIDRow struct {
+	ID                uuid.UUID
+	UserID            uuid.UUID
+	Location          sql.NullString
+	NationalIDUrl     sql.NullString
+	LciLetterUrl      sql.NullString
+	CvUrl             sql.NullString
+	ProfilePictureUrl sql.NullString
+	Languages         []string
+	DaysPerWeek       sql.NullInt32
+	HoursPerDay       sql.NullInt32
+	RateType          NullRateType
+	RateAmount        sql.NullString
+	PaymentMethod     sql.NullString
+	IsApproved        bool
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
+	IsAvailable       bool
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+func (q *Queries) GetBabysitterProfileByUserID(ctx context.Context, userID uuid.UUID) (GetBabysitterProfileByUserIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getBabysitterProfileByUserID, userID)
-	var i BabysitterProfile
+	var i GetBabysitterProfileByUserIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -125,6 +214,10 @@ func (q *Queries) GetBabysitterProfileByUserID(ctx context.Context, userID uuid.
 		&i.RateAmount,
 		&i.PaymentMethod,
 		&i.IsApproved,
+		&i.Gender,
+		pq.Array(&i.Availability),
+		&i.Currency,
+		&i.IsAvailable,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -135,13 +228,15 @@ const listApprovedBabysitters = `-- name: ListApprovedBabysitters :many
 SELECT u.id, u.full_name, u.email, u.phone, u.status,
        bp.location, bp.profile_picture_url, bp.languages,
        bp.days_per_week, bp.hours_per_day, bp.rate_type,
-       bp.rate_amount, bp.payment_method, bp.is_approved
+       bp.rate_amount, bp.payment_method, bp.is_approved,
+       bp.gender, bp.availability, bp.currency, bp.is_available
 FROM users u
 JOIN babysitter_profiles bp ON u.id = bp.user_id
 WHERE u.role = 'babysitter'
   AND u.deleted_at IS NULL
   AND u.status = 'active'
   AND bp.is_approved = TRUE
+  AND bp.is_available = TRUE
 ORDER BY u.created_at DESC
 `
 
@@ -160,6 +255,10 @@ type ListApprovedBabysittersRow struct {
 	RateAmount        sql.NullString
 	PaymentMethod     sql.NullString
 	IsApproved        bool
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
+	IsAvailable       bool
 }
 
 func (q *Queries) ListApprovedBabysitters(ctx context.Context) ([]ListApprovedBabysittersRow, error) {
@@ -186,6 +285,10 @@ func (q *Queries) ListApprovedBabysitters(ctx context.Context) ([]ListApprovedBa
 			&i.RateAmount,
 			&i.PaymentMethod,
 			&i.IsApproved,
+			&i.Gender,
+			pq.Array(&i.Availability),
+			&i.Currency,
+			&i.IsAvailable,
 		); err != nil {
 			return nil, err
 		}
@@ -200,13 +303,30 @@ func (q *Queries) ListApprovedBabysitters(ctx context.Context) ([]ListApprovedBa
 	return items, nil
 }
 
+const setWorkStatus = `-- name: SetWorkStatus :exec
+UPDATE babysitter_profiles
+SET is_available = $2, updated_at = NOW()
+WHERE user_id = $1
+`
+
+type SetWorkStatusParams struct {
+	UserID      uuid.UUID
+	IsAvailable bool
+}
+
+func (q *Queries) SetWorkStatus(ctx context.Context, arg SetWorkStatusParams) error {
+	_, err := q.db.ExecContext(ctx, setWorkStatus, arg.UserID, arg.IsAvailable)
+	return err
+}
+
 const updateBabysitterProfile = `-- name: UpdateBabysitterProfile :one
 UPDATE babysitter_profiles
 SET location = $2, languages = $3, days_per_week = $4, hours_per_day = $5,
     rate_type = $6, rate_amount = $7, payment_method = $8,
-    profile_picture_url = $9, updated_at = NOW()
+    profile_picture_url = $9, gender = $10, availability = $11,
+    currency = $12, updated_at = NOW()
 WHERE user_id = $1
-RETURNING id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, created_at, updated_at
+RETURNING id, user_id, location, national_id_url, lci_letter_url, cv_url, profile_picture_url, languages, days_per_week, hours_per_day, rate_type, rate_amount, payment_method, is_approved, gender, availability, currency, is_available, created_at, updated_at
 `
 
 type UpdateBabysitterProfileParams struct {
@@ -219,9 +339,35 @@ type UpdateBabysitterProfileParams struct {
 	RateAmount        sql.NullString
 	PaymentMethod     sql.NullString
 	ProfilePictureUrl sql.NullString
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
 }
 
-func (q *Queries) UpdateBabysitterProfile(ctx context.Context, arg UpdateBabysitterProfileParams) (BabysitterProfile, error) {
+type UpdateBabysitterProfileRow struct {
+	ID                uuid.UUID
+	UserID            uuid.UUID
+	Location          sql.NullString
+	NationalIDUrl     sql.NullString
+	LciLetterUrl      sql.NullString
+	CvUrl             sql.NullString
+	ProfilePictureUrl sql.NullString
+	Languages         []string
+	DaysPerWeek       sql.NullInt32
+	HoursPerDay       sql.NullInt32
+	RateType          NullRateType
+	RateAmount        sql.NullString
+	PaymentMethod     sql.NullString
+	IsApproved        bool
+	Gender            sql.NullString
+	Availability      []string
+	Currency          string
+	IsAvailable       bool
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+func (q *Queries) UpdateBabysitterProfile(ctx context.Context, arg UpdateBabysitterProfileParams) (UpdateBabysitterProfileRow, error) {
 	row := q.db.QueryRowContext(ctx, updateBabysitterProfile,
 		arg.UserID,
 		arg.Location,
@@ -232,8 +378,11 @@ func (q *Queries) UpdateBabysitterProfile(ctx context.Context, arg UpdateBabysit
 		arg.RateAmount,
 		arg.PaymentMethod,
 		arg.ProfilePictureUrl,
+		arg.Gender,
+		pq.Array(arg.Availability),
+		arg.Currency,
 	)
-	var i BabysitterProfile
+	var i UpdateBabysitterProfileRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -249,6 +398,10 @@ func (q *Queries) UpdateBabysitterProfile(ctx context.Context, arg UpdateBabysit
 		&i.RateAmount,
 		&i.PaymentMethod,
 		&i.IsApproved,
+		&i.Gender,
+		pq.Array(&i.Availability),
+		&i.Currency,
+		&i.IsAvailable,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

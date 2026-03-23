@@ -34,10 +34,11 @@ func (h *ParentHandler) UpdateProfile(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	updated, err := queries.UpdateParentProfile(ctx, db.UpdateParentProfileParams{
-		UserID:         currentUser.ID,
-		Location:       sql.NullString{String: req.Location, Valid: req.Location != ""},
-		Occupation:     sql.NullString{String: req.Occupation, Valid: req.Occupation != ""},
-		PreferredHours: sql.NullString{String: req.PreferredHours, Valid: req.PreferredHours != ""},
+		UserID:          currentUser.ID,
+		Location:        sql.NullString{String: req.Location, Valid: req.Location != ""},
+		Occupation:      sql.NullString{String: req.Occupation, Valid: req.Occupation != ""},
+		PreferredHours:  sql.NullString{String: req.PreferredHours, Valid: req.PreferredHours != ""},
+		PrimaryLocation: sql.NullString{String: req.PrimaryLocation, Valid: req.PrimaryLocation != ""},
 	})
 	if err != nil {
 		log.Printf("parent update_profile: db update: %v", err)

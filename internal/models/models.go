@@ -8,13 +8,14 @@ import "time"
 
 // RegisterParentRequest is the payload for the parent registration endpoint.
 type RegisterParentRequest struct {
-	FullName       string `json:"full_name"       binding:"required"`
-	Email          string `json:"email"           binding:"required,email"`
-	Phone          string `json:"phone"`
-	Location       string `json:"location"        binding:"required"`
-	Occupation     string `json:"occupation"      binding:"required"`
-	PreferredHours string `json:"preferred_hours" binding:"required"`
-	Password       string `json:"password"        binding:"required,min=8"`
+	FullName        string `json:"full_name"        binding:"required"`
+	Email           string `json:"email"            binding:"required,email"`
+	Phone           string `json:"phone"`
+	Location        string `json:"location"         binding:"required"`
+	PrimaryLocation string `json:"primary_location"`
+	Occupation      string `json:"occupation"       binding:"required"`
+	PreferredHours  string `json:"preferred_hours"  binding:"required"`
+	Password        string `json:"password"         binding:"required,min=8"`
 }
 
 // RegisterBabysitterRequest is the payload for the babysitter registration endpoint.
@@ -81,6 +82,10 @@ type BabysitterProfileResponse struct {
 	RateAmount        float64  `json:"rate_amount"`
 	PaymentMethod     string   `json:"payment_method"`
 	IsApproved        bool     `json:"is_approved"`
+	Gender            string   `json:"gender"`
+	Availability      []string `json:"availability"`
+	Currency          string   `json:"currency"`
+	IsAvailable       bool     `json:"is_available"`
 }
 
 // UpdateBabysitterProfileRequest is the payload for updating a babysitter profile.
@@ -92,6 +97,15 @@ type UpdateBabysitterProfileRequest struct {
 	RateType      string   `json:"rate_type"`
 	RateAmount    float64  `json:"rate_amount"`
 	PaymentMethod string   `json:"payment_method"`
+	Gender        string   `json:"gender"`
+	Availability  []string `json:"availability"`
+	Currency      string   `json:"currency"`
+}
+
+// SetWorkStatusRequest is the payload for updating a babysitter's work status.
+// IsAvailable uses a pointer so that an explicit `false` value is accepted by the binding validator.
+type SetWorkStatusRequest struct {
+	IsAvailable *bool `json:"is_available" binding:"required"`
 }
 
 // ---------------------------------------------------------------------------
@@ -100,9 +114,19 @@ type UpdateBabysitterProfileRequest struct {
 
 // UpdateParentProfileRequest is the payload for updating a parent profile.
 type UpdateParentProfileRequest struct {
-	Location       string `json:"location"`
-	Occupation     string `json:"occupation"`
-	PreferredHours string `json:"preferred_hours"`
+	Location        string `json:"location"`
+	Occupation      string `json:"occupation"`
+	PreferredHours  string `json:"preferred_hours"`
+	PrimaryLocation string `json:"primary_location"`
+}
+
+// ---------------------------------------------------------------------------
+// Saved babysitters types
+// ---------------------------------------------------------------------------
+
+// SaveBabysitterRequest is the payload for saving a babysitter.
+type SaveBabysitterRequest struct {
+	BabysitterID string `json:"babysitter_id" binding:"required"`
 }
 
 // ---------------------------------------------------------------------------
@@ -137,11 +161,26 @@ type ConversationResponse struct {
 // ---------------------------------------------------------------------------
 
 // ProfileViewResponse is returned when listing who viewed a babysitter's profile.
+// Restricted fields (Email, Phone, PrimaryLocation, PreferredHours) are only
+// populated when HasMessaged is true — the babysitter and parent have exchanged messages.
 type ProfileViewResponse struct {
-	ID         string    `json:"id"`
-	ParentID   string    `json:"parent_id"`
-	ParentName string    `json:"parent_name"`
-	ViewedAt   time.Time `json:"viewed_at"`
+	ID              string    `json:"id"`
+	ParentID        string    `json:"parent_id"`
+	ParentName      string    `json:"parent_name"`
+	Occupation      string    `json:"occupation"`
+	ViewedAt        time.Time `json:"viewed_at"`
+	HasMessaged     bool      `json:"has_messaged"`
+	Email           string    `json:"email,omitempty"`
+	Phone           string    `json:"phone,omitempty"`
+	PrimaryLocation string    `json:"primary_location,omitempty"`
+	PreferredHours  string    `json:"preferred_hours,omitempty"`
+}
+
+// WeeklyViewsResponse is returned for the weekly profile views count endpoint.
+type WeeklyViewsResponse struct {
+	BabysitterID string `json:"babysitter_id"`
+	ViewCount    int64  `json:"view_count"`
+	PeriodDays   int    `json:"period_days"`
 }
 
 // ---------------------------------------------------------------------------

@@ -25,13 +25,14 @@ func (h *AuthHandler) RegisterBabysitter(c *gin.Context) {
 		return
 	}
 
-	// --- Text fields ---
+	// --- Required text fields ---
 	fullName := strings.TrimSpace(c.Request.FormValue("full_name"))
 	email := strings.TrimSpace(c.Request.FormValue("email"))
 	phone := strings.TrimSpace(c.Request.FormValue("phone"))
 	location := strings.TrimSpace(c.Request.FormValue("location"))
 	password := c.Request.FormValue("password")
 	languagesRaw := strings.TrimSpace(c.Request.FormValue("languages"))
+	gender := strings.TrimSpace(strings.ToLower(c.Request.FormValue("gender")))
 
 	// Validate required text fields.
 	switch "" {
@@ -53,10 +54,18 @@ func (h *AuthHandler) RegisterBabysitter(c *gin.Context) {
 	case languagesRaw:
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "languages is required"})
 		return
+	case gender:
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "gender is required"})
+		return
 	}
 
 	if len(password) < 8 {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "password must be at least 8 characters"})
+		return
+	}
+
+	if gender != "male" && gender != "female" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "gender must be 'male' or 'female'"})
 		return
 	}
 
@@ -66,6 +75,36 @@ func (h *AuthHandler) RegisterBabysitter(c *gin.Context) {
 		if trimmed := strings.TrimSpace(lang); trimmed != "" {
 			languages = append(languages, trimmed)
 		}
+	}
+
+	// --- Optional text fields ---
+	// Availability: comma-separated days e.g. "Mon,Tue,Wed"
+	var availability []string
+	if raw := strings.TrimSpace(c.Request.FormValue("availability")); raw != "" {
+		for _, day := range strings.Split(raw, ",") {
+			if trimmed := strings.TrimSpace(day); trimmed != "" {
+				availability = append(availability, trimmed)
+			}
+		}
+	}
+
+	rateTypeRaw := strings.TrimSpace(c.Request.FormValue("rate_type"))
+	rateAmount := strings.TrimSpace(c.Request.FormValue("rate_amount"))
+	currency := strings.TrimSpace(c.Request.FormValue("currency"))
+	if currency == "" {
+		currency = "UGX"
+	}
+	paymentMethod := strings.TrimSpace(c.Request.FormValue("payment_method"))
+
+	// Validate rate_type if provided.
+	validRateTypes := map[string]bool{"hourly": true, "daily": true, "weekly": true, "monthly": true}
+	var rateType db.NullRateType
+	if rateTypeRaw != "" {
+		if !validRateTypes[rateTypeRaw] {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "rate_type must be one of: hourly, daily, weekly, monthly"})
+			return
+		}
+		rateType = db.NullRateType{RateType: db.RateType(rateTypeRaw), Valid: true}
 	}
 
 	queries := db.New(h.db)
@@ -175,6 +214,12 @@ func (h *AuthHandler) RegisterBabysitter(c *gin.Context) {
 		CvUrl:             sql.NullString{String: cvURL, Valid: cvURL != ""},
 		ProfilePictureUrl: sql.NullString{String: profilePictureURL, Valid: profilePictureURL != ""},
 		Languages:         languages,
+		RateType:          rateType,
+		RateAmount:        sql.NullString{String: rateAmount, Valid: rateAmount != ""},
+		PaymentMethod:     sql.NullString{String: paymentMethod, Valid: paymentMethod != ""},
+		Gender:            sql.NullString{String: gender, Valid: gender != ""},
+		Availability:      availability,
+		Currency:          currency,
 	})
 	if err != nil {
 		log.Printf("register_babysitter: create babysitter profile: %v", err)

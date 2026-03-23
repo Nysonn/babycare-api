@@ -13,16 +13,17 @@ import (
 )
 
 const createParentProfile = `-- name: CreateParentProfile :one
-INSERT INTO parent_profiles (user_id, location, occupation, preferred_hours)
-VALUES ($1, $2, $3, $4)
-RETURNING id, user_id, location, occupation, preferred_hours, created_at, updated_at
+INSERT INTO parent_profiles (user_id, location, occupation, preferred_hours, primary_location)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, user_id, location, occupation, preferred_hours, created_at, updated_at, primary_location
 `
 
 type CreateParentProfileParams struct {
-	UserID         uuid.UUID
-	Location       sql.NullString
-	Occupation     sql.NullString
-	PreferredHours sql.NullString
+	UserID          uuid.UUID
+	Location        sql.NullString
+	Occupation      sql.NullString
+	PreferredHours  sql.NullString
+	PrimaryLocation sql.NullString
 }
 
 func (q *Queries) CreateParentProfile(ctx context.Context, arg CreateParentProfileParams) (ParentProfile, error) {
@@ -31,6 +32,7 @@ func (q *Queries) CreateParentProfile(ctx context.Context, arg CreateParentProfi
 		arg.Location,
 		arg.Occupation,
 		arg.PreferredHours,
+		arg.PrimaryLocation,
 	)
 	var i ParentProfile
 	err := row.Scan(
@@ -41,12 +43,14 @@ func (q *Queries) CreateParentProfile(ctx context.Context, arg CreateParentProfi
 		&i.PreferredHours,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrimaryLocation,
 	)
 	return i, err
 }
 
 const getParentProfileByUserID = `-- name: GetParentProfileByUserID :one
-SELECT id, user_id, location, occupation, preferred_hours, created_at, updated_at FROM parent_profiles
+SELECT id, user_id, location, occupation, preferred_hours, created_at, updated_at, primary_location
+FROM parent_profiles
 WHERE user_id = $1
 `
 
@@ -61,22 +65,24 @@ func (q *Queries) GetParentProfileByUserID(ctx context.Context, userID uuid.UUID
 		&i.PreferredHours,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrimaryLocation,
 	)
 	return i, err
 }
 
 const updateParentProfile = `-- name: UpdateParentProfile :one
 UPDATE parent_profiles
-SET location = $2, occupation = $3, preferred_hours = $4, updated_at = NOW()
+SET location = $2, occupation = $3, preferred_hours = $4, primary_location = $5, updated_at = NOW()
 WHERE user_id = $1
-RETURNING id, user_id, location, occupation, preferred_hours, created_at, updated_at
+RETURNING id, user_id, location, occupation, preferred_hours, created_at, updated_at, primary_location
 `
 
 type UpdateParentProfileParams struct {
-	UserID         uuid.UUID
-	Location       sql.NullString
-	Occupation     sql.NullString
-	PreferredHours sql.NullString
+	UserID          uuid.UUID
+	Location        sql.NullString
+	Occupation      sql.NullString
+	PreferredHours  sql.NullString
+	PrimaryLocation sql.NullString
 }
 
 func (q *Queries) UpdateParentProfile(ctx context.Context, arg UpdateParentProfileParams) (ParentProfile, error) {
@@ -85,6 +91,7 @@ func (q *Queries) UpdateParentProfile(ctx context.Context, arg UpdateParentProfi
 		arg.Location,
 		arg.Occupation,
 		arg.PreferredHours,
+		arg.PrimaryLocation,
 	)
 	var i ParentProfile
 	err := row.Scan(
@@ -95,6 +102,7 @@ func (q *Queries) UpdateParentProfile(ctx context.Context, arg UpdateParentProfi
 		&i.PreferredHours,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrimaryLocation,
 	)
 	return i, err
 }
