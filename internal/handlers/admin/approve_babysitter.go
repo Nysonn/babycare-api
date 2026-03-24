@@ -46,7 +46,10 @@ func (h *AdminHandler) ApproveBabysitter(c *gin.Context) {
 		return
 	}
 
-	if _, err := queries.ApproveBabysitter(ctx, userID); err != nil {
+	if _, err := queries.ApproveBabysitter(ctx, userID); err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "babysitter profile not found"})
+		return
+	} else if err != nil {
 		log.Printf("admin approve_babysitter: approve query: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "internal server error"})
 		return
