@@ -223,7 +223,10 @@ func (h *AuthHandler) RegisterBabysitter(c *gin.Context) {
 	})
 	if err != nil {
 		log.Printf("register_babysitter: create babysitter profile: %v", err)
-		// Profile creation failure is logged; user row exists and can be retried.
+		_ = queries.SoftDeleteUser(ctx, user.ID)
+		_ = h.clerkService.DeleteUser(clerkUserID)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "failed to create babysitter profile"})
+		return
 	}
 
 	c.JSON(http.StatusCreated, models.UserResponse{

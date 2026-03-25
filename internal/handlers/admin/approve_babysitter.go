@@ -47,8 +47,20 @@ func (h *AdminHandler) ApproveBabysitter(c *gin.Context) {
 	}
 
 	if _, err := queries.ApproveBabysitter(ctx, userID); err == sql.ErrNoRows {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "babysitter profile not found"})
-		return
+		// Profile was never created (e.g. registration failed mid-way). Create a minimal one and approve.
+		if _, createErr := queries.CreateBabysitterProfile(ctx, db.CreateBabysitterProfileParams{
+			UserID:   userID,
+			Currency: "UGX",
+		}); createErr != nil {
+			log.Printf("admin approve_babysitter: create missing profile: %v", createErr)
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "internal server error"})
+			return
+		}
+		if _, err = queries.ApproveBabysitter(ctx, userID); err != nil {
+			log.Printf("admin approve_babysitter: approve after create: %v", err)
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "internal server error"})
+			return
+		}
 	} else if err != nil {
 		log.Printf("admin approve_babysitter: approve query: %v", err)
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "internal server error"})
