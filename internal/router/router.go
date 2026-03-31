@@ -104,6 +104,7 @@ func Setup(
 	// Static paths registered before the :id wildcard group.
 	babysitterSelf := api.Group("/babysitters", requireAuth, middleware.RequireRole(db, "babysitter"))
 	{
+		babysitterSelf.GET("/profile", babysitterHandler.GetProfile)
 		babysitterSelf.PUT("/profile", babysitterHandler.UpdateProfile)
 		babysitterSelf.GET("/profile/views", babysitterHandler.GetProfileViews)
 		babysitterSelf.GET("/profile/weekly-views", babysitterHandler.GetWeeklyViews)
