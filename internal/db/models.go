@@ -186,14 +186,15 @@ type Message struct {
 }
 
 type ParentProfile struct {
-	ID              uuid.UUID
-	UserID          uuid.UUID
-	Location        sql.NullString
-	Occupation      sql.NullString
-	PreferredHours  sql.NullString
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	PrimaryLocation sql.NullString
+	ID                uuid.UUID
+	UserID            uuid.UUID
+	Location          sql.NullString
+	Occupation        sql.NullString
+	PreferredHours    sql.NullString
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	PrimaryLocation   sql.NullString
+	ProfilePictureUrl sql.NullString
 }
 
 type ProfileView struct {

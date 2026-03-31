@@ -65,7 +65,7 @@ func Setup(
 	authHandler := handlers_auth.NewAuthHandler(db, clerkService, storageService, streamService, cfg)
 	adminHandler := handlers_admin.NewAdminHandler(db, cfg, emailService)
 	babysitterHandler := handlers_babysitter.NewBabysitterHandler(db, storageService, cacheService, cfg)
-	parentHandler := handlers_parent.NewParentHandler(db, cfg)
+	parentHandler := handlers_parent.NewParentHandler(db, storageService, cfg)
 	messagingHandler := handlers_messaging.NewMessagingHandler(db, streamService, emailService, cacheService, cfg)
 
 	// Shared middleware factories.
