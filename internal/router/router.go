@@ -138,6 +138,7 @@ func Setup(
 	{
 		conversations.POST("", messagingHandler.StartConversation)
 		conversations.GET("", messagingHandler.ListConversations)
+		conversations.GET("/previews", messagingHandler.GetConversationPreviews)
 		conversations.GET("/:conversation_id/messages", messagingHandler.ListMessages)
 		conversations.POST("/:conversation_id/messages", messagingHandler.SendMessage)
 	}

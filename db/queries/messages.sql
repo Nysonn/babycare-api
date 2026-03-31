@@ -33,3 +33,17 @@ SELECT COUNT(*) FROM messages m
 JOIN conversations c ON c.id = m.conversation_id
 WHERE (c.parent_id = $1 OR c.babysitter_id = $1)
   AND m.sent_at >= NOW() - INTERVAL '30 days';
+
+-- name: GetLastMessagePerConversation :many
+-- Returns the most recent message for every conversation the given user participates in.
+SELECT DISTINCT ON (m.conversation_id)
+    m.id,
+    m.conversation_id,
+    m.sender_id,
+    m.content,
+    m.is_read,
+    m.sent_at
+FROM messages m
+JOIN conversations c ON c.id = m.conversation_id
+WHERE c.parent_id = $1 OR c.babysitter_id = $1
+ORDER BY m.conversation_id, m.sent_at DESC;
