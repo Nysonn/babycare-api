@@ -27,6 +27,11 @@ func main() {
 
 	log.Println("database connection established")
 
+	if err := database.RunMigrations(db, "db/migrations"); err != nil {
+		log.Fatalf("failed to run database migrations: %v", err)
+	}
+	log.Println("database migrations applied")
+
 	// Seed the admin user (idempotent — safe to call on every startup).
 	database.SeedAdmin(db, cfg)
 

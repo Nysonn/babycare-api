@@ -52,12 +52,15 @@ FROM alpine:latest AS production
 # Required for HTTPS calls (e.g. Neon TLS)
 RUN apk add --no-cache ca-certificates
 
+WORKDIR /app
+
 # Copy compiled binary from builder stage
 COPY --from=builder /app/cmd-server /app/cmd-server
+COPY db/migrations /app/db/migrations
 
 # Run as a non-root user for security
 RUN adduser -D app \
-    && chown app:app /app/cmd-server
+    && chown -R app:app /app
 
 USER app
 
