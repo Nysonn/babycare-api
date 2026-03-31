@@ -29,6 +29,7 @@ updated conversation first). Conversations that have no messages yet are omitted
   {
     "conversation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "other_user_name": "Jane Smith",
+    "other_user_profile_picture_url": "https://res.cloudinary.com/example/image/upload/v1/babysitters/jane.jpg",
     "is_locked": false,
     "last_message_id": "8c9d1e2f-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
     "last_sender_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
@@ -41,15 +42,16 @@ updated conversation first). Conversations that have no messages yet are omitted
 
 ### Response fields
 
-| Field               | Type     | Description |
+| Field | Type | Description |
 |---------------------|----------|-------------|
-| `conversation_id`   | UUID     | Unique ID of the conversation thread. |
-| `other_user_name`   | string   | Full name of the other participant. |
-| `is_locked`         | boolean  | `true` when the conversation has been administratively locked (e.g. babysitter suspended). |
-| `last_message_id`   | UUID     | ID of the most recent message in this thread. |
-| `last_sender_id`    | UUID     | ID of the user who sent the last message. |
-| `preview_text`      | string   | Content of the last message — display directly as the preview snippet. |
-| `is_read`           | boolean  | Whether the last message has been read by the recipient. |
+| `conversation_id` | UUID | Unique ID of the conversation thread. |
+| `other_user_name` | string | Full name of the other participant. |
+| `other_user_profile_picture_url` | string | Profile picture URL of the other participant. Empty string `""` if no picture has been uploaded. |
+| `is_locked` | boolean | `true` when the conversation has been administratively locked (e.g. babysitter suspended). |
+| `last_message_id` | UUID | ID of the most recent message in this thread. |
+| `last_sender_id` | UUID | ID of the user who sent the last message. |
+| `preview_text` | string | Content of the last message — display directly as the preview snippet. |
+| `is_read` | boolean | Whether the last message has been read by the recipient. |
 | `last_message_sent` | ISO 8601 | Timestamp of the last message. |
 
 ---
@@ -99,6 +101,7 @@ if (response.statusCode == 200) {
 class ConversationPreview {
   final String conversationId;
   final String otherUserName;
+  final String otherUserProfilePictureUrl;
   final bool isLocked;
   final String lastMessageId;
   final String lastSenderId;
@@ -109,6 +112,7 @@ class ConversationPreview {
   ConversationPreview({
     required this.conversationId,
     required this.otherUserName,
+    required this.otherUserProfilePictureUrl,
     required this.isLocked,
     required this.lastMessageId,
     required this.lastSenderId,
@@ -121,6 +125,7 @@ class ConversationPreview {
     return ConversationPreview(
       conversationId: json['conversation_id'] as String,
       otherUserName: json['other_user_name'] as String,
+      otherUserProfilePictureUrl: json['other_user_profile_picture_url'] as String,
       isLocked: json['is_locked'] as bool,
       lastMessageId: json['last_message_id'] as String,
       lastSenderId: json['last_sender_id'] as String,

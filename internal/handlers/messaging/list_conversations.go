@@ -35,10 +35,11 @@ func (h *MessagingHandler) ListConversations(c *gin.Context) {
 	response := make([]models.ConversationResponse, 0, len(rows))
 	for _, row := range rows {
 		response = append(response, models.ConversationResponse{
-			ID:            row.ID.String(),
-			OtherUserName: row.OtherUserName,
-			IsLocked:      row.IsLocked,
-			CreatedAt:     row.CreatedAt,
+			ID:                         row.ID.String(),
+			OtherUserName:              row.OtherUserName,
+			OtherUserProfilePictureURL: row.OtherUserProfilePictureUrl,
+			IsLocked:                   row.IsLocked,
+			CreatedAt:                  row.CreatedAt,
 		})
 	}
 

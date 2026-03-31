@@ -150,24 +150,26 @@ type MessageResponse struct {
 
 // ConversationResponse is the public representation of a conversation thread.
 type ConversationResponse struct {
-	ID            string    `json:"id"`
-	OtherUserName string    `json:"other_user_name"`
-	IsLocked      bool      `json:"is_locked"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID                         string    `json:"id"`
+	OtherUserName              string    `json:"other_user_name"`
+	OtherUserProfilePictureURL string    `json:"other_user_profile_picture_url"`
+	IsLocked                   bool      `json:"is_locked"`
+	CreatedAt                  time.Time `json:"created_at"`
 }
 
 // ConversationPreviewResponse is the public representation of a conversation
 // enriched with the most recent message — used by the conversation list UI to
 // display message snippets and unread indicators.
 type ConversationPreviewResponse struct {
-	ConversationID  string    `json:"conversation_id"`
-	OtherUserName   string    `json:"other_user_name"`
-	IsLocked        bool      `json:"is_locked"`
-	LastMessageID   string    `json:"last_message_id"`
-	LastSenderID    string    `json:"last_sender_id"`
-	PreviewText     string    `json:"preview_text"`
-	IsRead          bool      `json:"is_read"`
-	LastMessageSent time.Time `json:"last_message_sent"`
+	ConversationID             string    `json:"conversation_id"`
+	OtherUserName              string    `json:"other_user_name"`
+	OtherUserProfilePictureURL string    `json:"other_user_profile_picture_url"`
+	IsLocked                   bool      `json:"is_locked"`
+	LastMessageID              string    `json:"last_message_id"`
+	LastSenderID               string    `json:"last_sender_id"`
+	PreviewText                string    `json:"preview_text"`
+	IsRead                     bool      `json:"is_read"`
+	LastMessageSent            time.Time `json:"last_message_sent"`
 }
 
 // ---------------------------------------------------------------------------

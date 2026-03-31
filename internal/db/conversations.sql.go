@@ -86,26 +86,36 @@ func (q *Queries) GetConversationByParticipants(ctx context.Context, arg GetConv
 }
 
 const listConversationsForUser = `-- name: ListConversationsForUser :many
-SELECT c.id, c.parent_id, c.babysitter_id, c.stream_channel_id, c.is_locked, c.created_at, c.updated_at, u.full_name AS other_user_name
+SELECT c.id, c.parent_id, c.babysitter_id, c.stream_channel_id, c.is_locked, c.created_at, c.updated_at,
+       u.full_name AS other_user_name,
+       COALESCE(
+           CASE WHEN c.parent_id = $1 THEN bp.profile_picture_url
+                ELSE pp.profile_picture_url
+           END,
+           ''
+       ) AS other_user_profile_picture_url
 FROM conversations c
 JOIN users u ON (
     CASE WHEN c.parent_id = $1 THEN u.id = c.babysitter_id
          ELSE u.id = c.parent_id
     END
 )
+LEFT JOIN babysitter_profiles bp ON bp.user_id = c.babysitter_id
+LEFT JOIN parent_profiles pp ON pp.user_id = c.parent_id
 WHERE c.parent_id = $1 OR c.babysitter_id = $1
 ORDER BY c.updated_at DESC
 `
 
 type ListConversationsForUserRow struct {
-	ID              uuid.UUID
-	ParentID        uuid.UUID
-	BabysitterID    uuid.UUID
-	StreamChannelID sql.NullString
-	IsLocked        bool
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	OtherUserName   string
+	ID                         uuid.UUID
+	ParentID                   uuid.UUID
+	BabysitterID               uuid.UUID
+	StreamChannelID            sql.NullString
+	IsLocked                   bool
+	CreatedAt                  time.Time
+	UpdatedAt                  time.Time
+	OtherUserName              string
+	OtherUserProfilePictureUrl string
 }
 
 func (q *Queries) ListConversationsForUser(ctx context.Context, parentID uuid.UUID) ([]ListConversationsForUserRow, error) {
@@ -126,6 +136,7 @@ func (q *Queries) ListConversationsForUser(ctx context.Context, parentID uuid.UU
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.OtherUserName,
+			&i.OtherUserProfilePictureUrl,
 		); err != nil {
 			return nil, err
 		}

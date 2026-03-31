@@ -66,14 +66,15 @@ func (h *MessagingHandler) GetConversationPreviews(c *gin.Context) {
 		}
 
 		response = append(response, models.ConversationPreviewResponse{
-			ConversationID:  conv.ID.String(),
-			OtherUserName:   conv.OtherUserName,
-			IsLocked:        conv.IsLocked,
-			LastMessageID:   msg.ID.String(),
-			LastSenderID:    msg.SenderID.String(),
-			PreviewText:     msg.Content,
-			IsRead:          msg.IsRead,
-			LastMessageSent: msg.SentAt,
+			ConversationID:             conv.ID.String(),
+			OtherUserName:              conv.OtherUserName,
+			OtherUserProfilePictureURL: conv.OtherUserProfilePictureUrl,
+			IsLocked:                   conv.IsLocked,
+			LastMessageID:              msg.ID.String(),
+			LastSenderID:               msg.SenderID.String(),
+			PreviewText:                msg.Content,
+			IsRead:                     msg.IsRead,
+			LastMessageSent:            msg.SentAt,
 		})
 	}
 
