@@ -127,6 +127,12 @@ func Setup(
 		parentRoutes.GET("/saved-babysitters", parentHandler.ListSavedBabysitters)
 	}
 
+	// Babysitters can view a parent's public profile (including profile picture).
+	parentView := api.Group("/parents", requireAuth, middleware.RequireRole(db, "babysitter"))
+	{
+		parentView.GET("/:id", parentHandler.GetParent)
+	}
+
 	// --- Messaging routes (parent or babysitter required) ---
 	conversations := api.Group("/conversations", requireAuth, middleware.RequireRole(db, "parent", "babysitter"))
 	{
