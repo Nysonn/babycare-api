@@ -1,6 +1,6 @@
 -- +goose Up
 ALTER TABLE parent_profiles
-ADD COLUMN profile_picture_url TEXT;
+ADD COLUMN IF NOT EXISTS profile_picture_url TEXT;
 
 -- +goose Down
 ALTER TABLE parent_profiles
