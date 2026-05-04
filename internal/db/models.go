@@ -204,6 +204,17 @@ type ProfileView struct {
 	ViewedAt     time.Time
 }
 
+type Report struct {
+	ID             uuid.UUID
+	ReporterID     uuid.UUID
+	ReportedUserID uuid.UUID
+	ReportType     string
+	Description    sql.NullString
+	Status         string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type SavedBabysitter struct {
 	ID           uuid.UUID
 	ParentID     uuid.UUID

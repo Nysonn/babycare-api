@@ -103,6 +103,14 @@ func (s *ClerkService) DeleteUser(clerkUserID string) error {
 	return nil
 }
 
+// SendResetPasswordEmail triggers Clerk to send a password-reset email to the user.
+func (s *ClerkService) SendResetPasswordEmail(clerkUserID string) error {
+	if _, err := s.clerkDo(http.MethodPost, "/users/"+clerkUserID+"/send_reset_password_email", map[string]any{}, nil); err != nil {
+		return fmt.Errorf("clerk: send reset password email: %w", err)
+	}
+	return nil
+}
+
 // GenerateToken creates a signed JWT for the given Clerk user ID, expiring at expiry.
 func (s *ClerkService) GenerateToken(clerkUserID string, expiry time.Time) (string, error) {
 	claims := jwt.MapClaims{

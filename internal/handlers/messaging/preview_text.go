@@ -65,10 +65,11 @@ func (h *MessagingHandler) GetConversationPreviews(c *gin.Context) {
 			continue
 		}
 
+		picURL, _ := conv.OtherUserProfilePictureUrl.(string)
 		response = append(response, models.ConversationPreviewResponse{
 			ConversationID:             conv.ID.String(),
 			OtherUserName:              conv.OtherUserName,
-			OtherUserProfilePictureURL: conv.OtherUserProfilePictureUrl,
+			OtherUserProfilePictureURL: picURL,
 			IsLocked:                   conv.IsLocked,
 			LastMessageID:              msg.ID.String(),
 			LastSenderID:               msg.SenderID.String(),

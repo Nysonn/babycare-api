@@ -115,7 +115,7 @@ type ListConversationsForUserRow struct {
 	CreatedAt                  time.Time
 	UpdatedAt                  time.Time
 	OtherUserName              string
-	OtherUserProfilePictureUrl string
+	OtherUserProfilePictureUrl interface{}
 }
 
 func (q *Queries) ListConversationsForUser(ctx context.Context, parentID uuid.UUID) ([]ListConversationsForUserRow, error) {

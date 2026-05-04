@@ -10,6 +10,7 @@ import (
 	handlers_babysitter "babycare-api/internal/handlers/babysitter"
 	handlers_messaging "babycare-api/internal/handlers/messaging"
 	handlers_parent "babycare-api/internal/handlers/parent"
+	handlers_reporting "babycare-api/internal/handlers/reporting"
 	"babycare-api/internal/middleware"
 	services_auth "babycare-api/internal/services/auth"
 	services_cache "babycare-api/internal/services/cache"
@@ -67,6 +68,7 @@ func Setup(
 	babysitterHandler := handlers_babysitter.NewBabysitterHandler(db, storageService, cacheService, cfg)
 	parentHandler := handlers_parent.NewParentHandler(db, storageService, cfg)
 	messagingHandler := handlers_messaging.NewMessagingHandler(db, streamService, emailService, cacheService, cfg)
+	reportingHandler := handlers_reporting.NewReportingHandler(db, cfg)
 
 	// Shared middleware factories.
 	requireAuth := middleware.RequireAuth(clerkService)
@@ -81,6 +83,7 @@ func Setup(
 		auth.POST("/register/babysitter", authHandler.RegisterBabysitter)
 		auth.POST("/login", authHandler.Login)
 		auth.POST("/logout", requireAuth, authHandler.Logout)
+		auth.POST("/forgot-password", authHandler.ForgotPassword)
 	}
 
 	// --- Admin routes (admin role required) ---
@@ -93,6 +96,8 @@ func Setup(
 		admin.DELETE("/users/:id", adminHandler.DeleteUser)
 		admin.POST("/create", adminHandler.CreateAdmin)
 		admin.GET("/activity", adminHandler.GetActivity)
+		admin.GET("/reports", reportingHandler.ListReports)
+		admin.PUT("/reports/:id", reportingHandler.UpdateReportStatus)
 	}
 
 	// --- Babysitter routes ---
@@ -141,6 +146,12 @@ func Setup(
 		conversations.GET("/previews", messagingHandler.GetConversationPreviews)
 		conversations.GET("/:conversation_id/messages", messagingHandler.ListMessages)
 		conversations.POST("/:conversation_id/messages", messagingHandler.SendMessage)
+	}
+
+	// --- Reporting routes (parent or babysitter required) ---
+	reports := api.Group("/reports", requireAuth, middleware.RequireRole(db, "parent", "babysitter"))
+	{
+		reports.POST("", reportingHandler.SubmitReport)
 	}
 
 	return r

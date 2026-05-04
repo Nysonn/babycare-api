@@ -52,6 +52,51 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 	return i, err
 }
 
+const getLastMessagePerConversation = `-- name: GetLastMessagePerConversation :many
+SELECT DISTINCT ON (m.conversation_id)
+    m.id,
+    m.conversation_id,
+    m.sender_id,
+    m.content,
+    m.is_read,
+    m.sent_at
+FROM messages m
+JOIN conversations c ON c.id = m.conversation_id
+WHERE c.parent_id = $1 OR c.babysitter_id = $1
+ORDER BY m.conversation_id, m.sent_at DESC
+`
+
+// Returns the most recent message for every conversation the given user participates in.
+func (q *Queries) GetLastMessagePerConversation(ctx context.Context, parentID uuid.UUID) ([]Message, error) {
+	rows, err := q.db.QueryContext(ctx, getLastMessagePerConversation, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.ConversationID,
+			&i.SenderID,
+			&i.Content,
+			&i.IsRead,
+			&i.SentAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getMessageCountByUserPair = `-- name: GetMessageCountByUserPair :one
 SELECT COUNT(*) FROM messages m
 JOIN conversations c ON c.id = m.conversation_id
@@ -137,48 +182,4 @@ type MarkMessagesAsReadParams struct {
 func (q *Queries) MarkMessagesAsRead(ctx context.Context, arg MarkMessagesAsReadParams) error {
 	_, err := q.db.ExecContext(ctx, markMessagesAsRead, arg.ConversationID, arg.SenderID)
 	return err
-}
-
-const getLastMessagePerConversation = `-- name: GetLastMessagePerConversation :many
-SELECT DISTINCT ON (m.conversation_id)
-    m.id,
-    m.conversation_id,
-    m.sender_id,
-    m.content,
-    m.is_read,
-    m.sent_at
-FROM messages m
-JOIN conversations c ON c.id = m.conversation_id
-WHERE c.parent_id = $1 OR c.babysitter_id = $1
-ORDER BY m.conversation_id, m.sent_at DESC
-`
-
-func (q *Queries) GetLastMessagePerConversation(ctx context.Context, userID uuid.UUID) ([]Message, error) {
-	rows, err := q.db.QueryContext(ctx, getLastMessagePerConversation, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Message
-	for rows.Next() {
-		var i Message
-		if err := rows.Scan(
-			&i.ID,
-			&i.ConversationID,
-			&i.SenderID,
-			&i.Content,
-			&i.IsRead,
-			&i.SentAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
