@@ -104,14 +104,6 @@ func (s *ClerkService) DeleteUser(clerkUserID string) error {
 	return nil
 }
 
-// SendResetPasswordEmail triggers Clerk to send a password-reset email to the user.
-func (s *ClerkService) SendResetPasswordEmail(clerkUserID string) error {
-	if _, err := s.clerkDo(http.MethodPost, "/users/"+clerkUserID+"/send_reset_password_email", map[string]any{}, nil); err != nil {
-		return fmt.Errorf("clerk: send reset password email: %w", err)
-	}
-	return nil
-}
-
 // VerifyPassword checks whether password matches the Clerk-stored credential for
 // the given user. Returns (true, nil) on success, (false, nil) on a wrong
 // password, and (false, err) on any transport or API error.

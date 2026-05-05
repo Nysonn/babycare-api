@@ -19,70 +19,80 @@ This document covers the three new features added to the API. Integrate each sec
 
 ## 1. Forgot Password
 
-Allows a user who has forgotten their password to trigger a reset email. Clerk handles sending the email and the reset link — no extra setup is needed on the Flutter side beyond calling this endpoint.
+Password reset must be initiated directly from the Clerk Flutter client SDK. Do not call the BabyCare API for this flow.
 
-### Endpoint
+Clerk's supported flow is:
+
+```
+1. Start a sign-in attempt with strategy: reset_password_email_code
+2. Pass the user's email as the identifier
+3. Clerk sends the reset code to the user's email
+4. Submit the code and the new password with the same strategy
+```
+
+### API Status
+
+The old backend endpoint below is deprecated and now returns `410 Gone`:
 
 ```
 POST /api/v1/auth/forgot-password
 ```
 
-**Authentication:** Not required (public endpoint).
+### Client-Side Clerk Flow
 
-### Request Body
+Use the Clerk sign-in resource from your Flutter app to start the reset flow.
 
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-| Field   | Type   | Required | Description                    |
-|---------|--------|----------|--------------------------------|
-| `email` | string | Yes      | The email address of the account. Must be a valid email format. |
-
-### Success Response
-
-**200 OK** — always returned regardless of whether the email exists, to prevent account enumeration.
-
-```json
-{
-  "message": "If an account with that email exists, a reset link has been sent."
-}
-```
-
-### Error Responses
-
-| Status | Body | When |
-|--------|------|------|
-| `400 Bad Request` | `{ "error": "valid email is required" }` | Missing or malformed email field. |
-| `500 Internal Server Error` | `{ "error": "internal server error" }` | Unexpected server fault. |
-
-### Flutter Integration Notes
-
-- Always show the same success message to the user regardless of the response — do **not** tell them whether the account exists.
-- Show a loading indicator while the request is in flight, then navigate the user to a confirmation screen that says something like *"Check your inbox for a password reset link."*
-- The reset link opened from the email is handled outside the app (Clerk's hosted page). You do not need to build a reset password screen in Flutter.
-
-### Example (Dart)
+#### Step 1: Send reset code
 
 ```dart
-Future<void> forgotPassword(String email) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/api/v1/auth/forgot-password'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'email': email}),
+Future<void> sendPasswordResetCode(String email) async {
+  await clerk.client.signIn.create(
+    strategy: 'reset_password_email_code',
+    identifier: email,
   );
-
-  if (response.statusCode == 200) {
-    // Always show the same neutral confirmation message
-    showConfirmationScreen();
-  } else {
-    final body = jsonDecode(response.body);
-    throw Exception(body['error'] ?? 'Something went wrong');
-  }
 }
 ```
+
+#### Step 2: Submit code and new password
+
+```dart
+Future<void> completePasswordReset({
+  required String code,
+  required String newPassword,
+}) async {
+  final result = await clerk.client.signIn.attemptFirstFactor(
+    strategy: 'reset_password_email_code',
+    code: code,
+    password: newPassword,
+  );
+
+  if (result.status == 'complete') {
+    await clerk.setActive(session: result.createdSessionId);
+    return;
+  }
+
+  throw Exception('Password reset requires additional Clerk steps.');
+}
+```
+
+### UI Notes
+
+- Build this as a two-step screen: enter email, then enter reset code and new password.
+- Show Clerk's error message when the SDK rejects the request.
+- If the result status is `complete`, set the created session as active so the user is signed in immediately after resetting their password.
+- If your Clerk Flutter SDK version exposes slightly different method names, keep the same flow and strategy value: `reset_password_email_code`.
+
+### Expected Backend Behavior
+
+If the app still calls `POST /api/v1/auth/forgot-password`, the API will return:
+
+```json
+{
+  "error": "forgot password must be initiated from the Clerk client SDK using the reset_password_email_code flow"
+}
+```
+
+with status `410 Gone`.
 
 ---
 

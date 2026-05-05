@@ -54,6 +54,7 @@ Authorization: Bearer <your_token>
 | POST | /api/v1/auth/register/babysitter | No | — |
 | POST | /api/v1/auth/login | No | — |
 | POST | /api/v1/auth/logout | Yes | Any |
+| POST | /api/v1/auth/forgot-password | No | Deprecated: use Clerk client SDK |
 | GET | /api/v1/admin/users | Yes | Admin |
 | GET | /api/v1/admin/users/:id | Yes | Admin |
 | PUT | /api/v1/admin/babysitters/:id/approve | Yes | Admin |
@@ -228,6 +229,23 @@ Logout the currently authenticated user.
 ```
 
 > **Note:** Discard the token on the client side after calling this endpoint.
+
+---
+
+### `POST /api/v1/auth/forgot-password`
+
+Deprecated.
+
+Password reset must be initiated in the client with Clerk's `reset_password_email_code` sign-in flow. The backend no longer proxies password reset requests to Clerk.
+
+**Response** `410 Gone`
+```json
+{
+  "error": "forgot password must be initiated from the Clerk client SDK using the reset_password_email_code flow"
+}
+```
+
+> **Note:** Update the Flutter app to use the Clerk SDK directly for requesting the reset code and submitting the new password.
 
 ---
 
