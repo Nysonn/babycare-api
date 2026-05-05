@@ -212,6 +212,22 @@ type ActivityResponse struct {
 	MessageCount  int64  `json:"message_count"`
 }
 
+// ReportResponse is the public representation of a user report returned by the admin API.
+type ReportResponse struct {
+	ID             string    `json:"id"`
+	ReporterID     string    `json:"reporter_id"`
+	ReportedUserID string    `json:"reported_user_id"`
+	ReportType     string    `json:"report_type"`
+	Description    *string   `json:"description"`
+	Status         string    `json:"status"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	ReporterName   string    `json:"reporter_name"`
+	ReporterEmail  string    `json:"reporter_email"`
+	ReportedName   string    `json:"reported_name"`
+	ReportedEmail  string    `json:"reported_email"`
+}
+
 // ---------------------------------------------------------------------------
 // Generic response types
 // ---------------------------------------------------------------------------
