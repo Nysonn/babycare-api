@@ -57,9 +57,30 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Verify password.
-	if !services_auth.CheckPassword(req.Password, user.PasswordHash.String) {
-		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "invalid credentials"})
-		return
+	// Admin accounts are seeded directly into the DB (no Clerk) — use local bcrypt.
+	// All other roles have passwords managed by Clerk; use Clerk's verify_password
+	// API so that password resets via the forgot-password flow take effect immediately.
+	if user.Role == db.UserRoleAdmin {
+		if !services_auth.CheckPassword(req.Password, user.PasswordHash.String) {
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "invalid credentials"})
+			return
+		}
+	} else {
+		if !user.ClerkUserID.Valid || user.ClerkUserID.String == "" {
+			log.Printf("login: user %s has empty clerk_user_id", user.ID)
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "account configuration error, please contact support"})
+			return
+		}
+		ok, err := h.clerkService.VerifyPassword(user.ClerkUserID.String, req.Password)
+		if err != nil {
+			log.Printf("login: clerk verify password: %v", err)
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "internal server error"})
+			return
+		}
+		if !ok {
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "invalid credentials"})
+			return
+		}
 	}
 
 	expiresAt := time.Now().Add(90 * 24 * time.Hour)
@@ -70,12 +91,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		// Use the user's own UUID as the JWT subject.
 		tokenSubject = user.ID.String()
 	} else {
-		// Guard against non-admin users with no Clerk ID (misconfigured accounts).
-		if !user.ClerkUserID.Valid || user.ClerkUserID.String == "" {
-			log.Printf("login: user %s has empty clerk_user_id", user.ID)
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "account configuration error, please contact support"})
-			return
-		}
+		// Guard already checked above; ClerkUserID is guaranteed valid here.
 
 		// Sync user into Stream Chat (non-fatal if it fails).
 		if err := h.streamService.UpsertUser(user.ID.String(), user.FullName); err != nil {

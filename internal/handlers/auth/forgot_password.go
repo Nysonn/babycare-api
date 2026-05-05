@@ -47,7 +47,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	}
 
 	if err := h.clerkService.SendResetPasswordEmail(user.ClerkUserID.String); err != nil {
-		log.Printf("forgot_password: clerk send reset email: %v", err)
+		log.Printf("forgot_password: clerk send reset email for user %s: %v", user.ID, err)
 		// Still return 200 — the caller should not know whether the operation failed.
 		c.JSON(http.StatusOK, gin.H{"message": "If an account with that email exists, a reset link has been sent."})
 		return

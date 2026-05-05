@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -109,6 +110,38 @@ func (s *ClerkService) SendResetPasswordEmail(clerkUserID string) error {
 		return fmt.Errorf("clerk: send reset password email: %w", err)
 	}
 	return nil
+}
+
+// VerifyPassword checks whether password matches the Clerk-stored credential for
+// the given user. Returns (true, nil) on success, (false, nil) on a wrong
+// password, and (false, err) on any transport or API error.
+func (s *ClerkService) VerifyPassword(clerkUserID, password string) (bool, error) {
+	var result struct {
+		Verified bool `json:"verified"`
+	}
+	_, err := s.clerkDo(
+		http.MethodPost,
+		"/users/"+clerkUserID+"/verify_password",
+		map[string]any{"password": password},
+		&result,
+	)
+	if err != nil {
+		// Clerk returns 422 for a wrong password — treat that as (false, nil).
+		if isClerkVerificationFailure(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("clerk: verify password: %w", err)
+	}
+	return result.Verified, nil
+}
+
+// isClerkVerificationFailure returns true when a Clerk API error indicates that
+// the supplied password was simply wrong (HTTP 422 / 400) rather than a
+// transport or server error that the caller should surface as a 500.
+func isClerkVerificationFailure(err error) bool {
+	msg := err.Error()
+	// Clerk returns 422 Unprocessable Entity for wrong passwords.
+	return strings.Contains(msg, "status 422") || strings.Contains(msg, "status 400")
 }
 
 // GenerateToken creates a signed JWT for the given Clerk user ID, expiring at expiry.
